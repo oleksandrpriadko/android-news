@@ -7,6 +7,7 @@ import os
 import re
 import sys
 import time
+from datetime import datetime, timezone
 
 import feedparser
 import requests
@@ -17,6 +18,7 @@ FEEDS = {
 }
 
 STATE_FILE = os.environ.get("STATE_FILE", "state.json")
+DIGESTS_DIR = os.environ.get("DIGESTS_DIR", "digests")
 MAX_TRACKED_IDS = 500
 EXCERPT_LENGTH = 220
 SLACK_BATCH_SIZE = 10
@@ -94,6 +96,34 @@ def fetch_new_items(state):
     return new_items, newly_seen
 
 
+def render_digest_markdown(date_str, items):
+    lines = [f"# Android/Kotlin dev news — {date_str}", ""]
+    for item in items:
+        lines.append(f"### [{item['title']}]({item['link']})")
+        lines.append(f"*{item['source']}*")
+        lines.append("")
+        lines.append(item["excerpt"])
+        lines.append("")
+    return "\n".join(lines).rstrip() + "\n"
+
+
+def write_digest(date_str, items):
+    os.makedirs(DIGESTS_DIR, exist_ok=True)
+    path = os.path.join(DIGESTS_DIR, f"{date_str}.md")
+    with open(path, "w") as f:
+        f.write(render_digest_markdown(date_str, items))
+    return path
+
+
+def digest_url(path):
+    """Build a link to the digest file on GitHub, if running inside Actions."""
+    repo = os.environ.get("GITHUB_REPOSITORY")
+    if not repo:
+        return None
+    ref = os.environ.get("GITHUB_REF_NAME", "main")
+    return f"https://github.com/{repo}/blob/{ref}/{path}"
+
+
 def build_slack_payload(items):
     blocks = [
         {
@@ -116,10 +146,18 @@ def build_slack_payload(items):
     return {"text": fallback_text, "blocks": blocks}
 
 
-def post_to_slack(webhook_url, items, batch_size=SLACK_BATCH_SIZE):
-    for i in range(0, len(items), batch_size):
-        batch = items[i : i + batch_size]
+def post_to_slack(webhook_url, items, digest_link=None, batch_size=SLACK_BATCH_SIZE):
+    batches = [items[i : i + batch_size] for i in range(0, len(items), batch_size)]
+    for i, batch in enumerate(batches):
         payload = build_slack_payload(batch)
+        if digest_link and i == len(batches) - 1:
+            payload["blocks"].append({"type": "divider"})
+            payload["blocks"].append(
+                {
+                    "type": "context",
+                    "elements": [{"type": "mrkdwn", "text": f"📄 Full digest saved to the repo: <{digest_link}|{digest_link}>"}],
+                }
+            )
         response = requests.post(webhook_url, json=payload, timeout=15)
         response.raise_for_status()
 
@@ -136,8 +174,10 @@ def main():
     new_items, newly_seen_ids = fetch_new_items(state)
 
     if new_items:
-        post_to_slack(webhook_url, new_items)
-        print(f"Posted {len(new_items)} new item(s) to Slack.")
+        date_str = datetime.now(timezone.utc).date().isoformat()
+        digest_file = write_digest(date_str, new_items)
+        post_to_slack(webhook_url, new_items, digest_link=digest_url(digest_file))
+        print(f"Posted {len(new_items)} new item(s) to Slack. Digest saved to {digest_file}.")
     elif was_first_run:
         print("First run: seeded state with existing feed items, nothing posted.")
     else:

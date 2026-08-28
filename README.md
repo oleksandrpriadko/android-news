@@ -13,8 +13,13 @@ file the workflow commits back to the repo after each run.
   with `feedparser`, skips any entry already recorded in `state.json`,
   formats the new ones (title + link + short excerpt) into a Slack message,
   and posts it with `requests` via a Slack Incoming Webhook.
-- After a successful run, the workflow commits the updated `state.json` so
-  the next run knows what's already been posted.
+- When there are new items, the script also writes a
+  `digests/YYYY-MM-DD.md` file with the full day's items, and the Slack
+  message links to it — a new file each day, so there's a browsable archive
+  in the repo beyond Slack's own history.
+- After a successful run, the workflow commits the updated `state.json`
+  (and that day's digest file, if any) so the next run knows what's already
+  been posted.
 
 ### Sources
 
