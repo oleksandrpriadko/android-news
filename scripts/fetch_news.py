@@ -60,12 +60,11 @@ def entry_sort_key(entry):
 def fetch_new_items(state):
     """Return (new_items_to_post, ids_seen_this_run).
 
-    On the very first run (empty state), every current entry is recorded as
-    seen but nothing is posted — otherwise the bot would dump each feed's
-    entire backlog into Slack the moment it's enabled.
+    If state.json is empty, every entry currently in each feed counts as
+    new — the first run produces a digest of what's live right now instead
+    of silently seeding.
     """
     seen_ids = set(state.get("posted_ids", []))
-    first_run = not seen_ids
     new_items = []
     newly_seen = []
 
@@ -80,8 +79,6 @@ def fetch_new_items(state):
             if not eid or eid in seen_ids:
                 continue
             newly_seen.append(eid)
-            if first_run:
-                continue
             new_items.append(
                 {
                     "source": source,
@@ -166,7 +163,6 @@ def main():
     webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
 
     state = load_state(STATE_FILE)
-    was_first_run = not state.get("posted_ids")
 
     new_items, newly_seen_ids = fetch_new_items(state)
 
@@ -177,8 +173,6 @@ def main():
         if webhook_url:
             post_to_slack(webhook_url, new_items, digest_link=digest_url(digest_file))
             print("Posted to Slack.")
-    elif was_first_run:
-        print("First run: seeded state with existing feed items, nothing written.")
     else:
         print("No new items.")
 

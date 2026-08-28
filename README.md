@@ -33,10 +33,10 @@ Add or remove feeds by editing the `FEEDS` dict at the top of
 
 ### First run
 
-On the very first run (empty `state.json`), the script records every entry
-currently in each feed as "seen" but doesn't write a digest for them —
-otherwise the very first run would dump each blog's entire backlog into the
-repo. Every run after that only records genuinely new items.
+If `state.json` is empty, everything currently in each feed counts as
+"new" — the first run writes a digest of what's live right now (typically
+the last handful of posts per feed, since these are low-volume blogs).
+Every run after that only records genuinely new items.
 
 ## Setup
 
