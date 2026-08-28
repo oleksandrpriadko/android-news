@@ -25,8 +25,9 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.txt
 
-      - name: Fetch news and post to Slack
+      - name: Fetch news and write digest
         env:
+          # Optional: only set if you want Slack posting too. Safe to leave unset.
           SLACK_WEBHOOK_URL: ${{ secrets.SLACK_WEBHOOK_URL }}
         run: python scripts/fetch_news.py
 

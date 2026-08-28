@@ -164,9 +164,6 @@ def post_to_slack(webhook_url, items, digest_link=None, batch_size=SLACK_BATCH_S
 
 def main():
     webhook_url = os.environ.get("SLACK_WEBHOOK_URL")
-    if not webhook_url:
-        print("error: SLACK_WEBHOOK_URL is not set", file=sys.stderr)
-        return 1
 
     state = load_state(STATE_FILE)
     was_first_run = not state.get("posted_ids")
@@ -176,10 +173,12 @@ def main():
     if new_items:
         date_str = datetime.now(timezone.utc).date().isoformat()
         digest_file = write_digest(date_str, new_items)
-        post_to_slack(webhook_url, new_items, digest_link=digest_url(digest_file))
-        print(f"Posted {len(new_items)} new item(s) to Slack. Digest saved to {digest_file}.")
+        print(f"Wrote {len(new_items)} new item(s) to {digest_file}.")
+        if webhook_url:
+            post_to_slack(webhook_url, new_items, digest_link=digest_url(digest_file))
+            print("Posted to Slack.")
     elif was_first_run:
-        print("First run: seeded state with existing feed items, nothing posted.")
+        print("First run: seeded state with existing feed items, nothing written.")
     else:
         print("No new items.")
 
