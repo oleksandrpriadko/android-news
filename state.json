@@ -81,6 +81,7 @@
     "tag:developer.android.com,2026-08-25:/blog/posts/ensuring-safety-in-the-generative-ai-ecosystem-protecting-users-from-non-consensual-intimate-content",
     "tag:developer.android.com,2026-08-24:/blog/posts/aaos-sdv-secure-by-design",
     "tag:developer.android.com,2026-08-19:/blog/posts/preparing-your-app-for-broader-memory-limits",
-    "tag:developer.android.com,2026-08-18:/blog/posts/tinder-cuts-app-cold-starts-by-47-with-new-r8-configuration-analyzer"
+    "tag:developer.android.com,2026-08-18:/blog/posts/tinder-cuts-app-cold-starts-by-47-with-new-r8-configuration-analyzer",
+    "tag:developer.android.com,2026-10-19:/blog/posts/grab-r8-profile-guided-optimization-anr-startup-time"
   ]
 }
